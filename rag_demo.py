@@ -1,4 +1,4 @@
-"""RAG demo 第一步：把 docs 目录下的所有文档读进来。
+"""关键词版 RAG demo：读 docs/ 的制度文档，双字匹配检索 Top-3，交给大模型回答。
 
 不管你在哪个目录下运行，都能正确找到 docs：
     cd 练习/rag && python rag_demo.py      -> 可以
@@ -57,13 +57,6 @@ def run_agent(user_prompt):
         # path.name        文件名（带扩展名）
         # path.stem        文件名（不带扩展名），后面做 doc_id 可以用
 
-        # for chunk in text.split("\n## "):
-        #     chu = "## " + chunk.strip()
-        #     chunks.append({"文件序号": i, "文件名": path.name, "文件内容": chu})
-        #     # print(chu)
-        # # print(chus)
-        # print(chunks)
-
         parts = text.split("\n## ")  # 先存成变量，下面要回头拿 parts[0]
 
         for j, chunk in enumerate(parts):
@@ -84,11 +77,7 @@ def run_agent(user_prompt):
         )
 
     chunks.sort(key=lambda cc: cc["分数"], reverse=True)
-    # print(chunks)
     top3 = chunks[:3]
-    # top_content = []
-    # for top in top3:
-    #     top_content += {top["文件名"], top["文件内容"]}
     top_content = ""  # ← 空字符串打底
     for top in top3:
         top_content += (
@@ -110,17 +99,7 @@ def run_agent(user_prompt):
     messages.append(message)
     return message.content
 
-    # for chu in chunks:
-    #     print(chu["文件名"], chu["文件内容"][:30].replace("\n", " "))
-    # print(f"总共{len(chunks)}块")
-
 
 if __name__ == "__main__":
-    print(run_agent("我要休假, 需要提前几天申请"))
+    print(run_agent("我想休假，要提前几天申请？"))
 
-# print(run_agent("出差住宿超过 500 元的部分，公司给报销吗？"))
-# print(run_agent("个人娱乐消费能报销吗"))
-# for i in range(5):
-#     print(f"===== 第 {i + 1} 次 =====")
-#     print(run_agent("个人娱乐消费能报销吗"))
-# print(run_agent("个人娱乐消费能报销吗"))
