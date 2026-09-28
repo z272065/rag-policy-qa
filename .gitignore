@@ -1,0 +1,8 @@
+# 密钥：只提交 .env.example，真钥匙永远不进仓库
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
