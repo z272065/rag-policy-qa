@@ -1,2 +1,4 @@
 openai==3.17.0
 python-dotenv==1.2.3
+chromadb==1.5.9
+requests==2.34.2

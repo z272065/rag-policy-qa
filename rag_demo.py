@@ -1,10 +1,3 @@
-"""关键词版 RAG demo：读 docs/ 的制度文档，双字匹配检索 Top-3，交给大模型回答。
-
-不管你在哪个目录下运行，都能正确找到 docs：
-    cd 练习/rag && python rag_demo.py      -> 可以
-    cd 练习     && python rag/rag_demo.py  -> 也可以
-"""
-
 import os
 from openai import OpenAI
 from pathlib import Path
@@ -18,7 +11,7 @@ client = OpenAI(
 )
 
 
-# ---- 1) 定位 docs 目录 -------------------------------------------------
+# 1.定位 docs 目录
 # Path(__file__)   当前脚本自己的路径（__file__ 是 Python 注入的变量）
 # .resolve()       转成绝对路径，顺便解析 .. 和软链接
 # .parent          去掉文件名，拿到脚本所在目录（也就是 rag/）
@@ -29,7 +22,7 @@ DOCS_DIR = BASE_DIR / "docs"
 if not DOCS_DIR.is_dir():
     raise SystemExit(f"找不到目录: {DOCS_DIR}（当前工作目录是 {Path.cwd()}）")
 
-# ---- 2) 找出 docs 下的所有 .md 文件 -------------------------------------
+# 2.找出 docs 下的所有 .md 文件
 # glob("*.md")  只匹配直接子项，不递归（要递归用 rglob）
 # 它返回的是生成器，只能遍历一次，所以这里用 sorted() 立刻转成列表，
 # 顺便保证 01 -> 04 的顺序（文件系统返回顺序是不保证的）
@@ -48,14 +41,11 @@ def score(question, text):
 
 
 def run_agent(user_prompt):
-    # ---- 3) 逐个读取 -------------------------------------------------------
+    # 3.逐个读取
     chunks = []
     for i, path in enumerate(doc_files, start=1):
         # read_text 必须显式指定 encoding，Windows 默认编码读中文会报 UnicodeDecodeError
         text = path.read_text(encoding="utf-8")
-
-        # path.name        文件名（带扩展名）
-        # path.stem        文件名（不带扩展名），后面做 doc_id 可以用
 
         parts = text.split("\n## ")  # 先存成变量，下面要回头拿 parts[0]
 
@@ -102,4 +92,3 @@ def run_agent(user_prompt):
 
 if __name__ == "__main__":
     print(run_agent("我想休假，要提前几天申请？"))
-
