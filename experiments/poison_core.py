@@ -1,18 +1,11 @@
-"""投毒核心对照复现：REPORT 6.1 第 3、4 行（朴素假话 vs 决议外衣假话）。
+"""投毒核心对照复现：朴素假话 vs 决议外衣假话（见 experiments/REPORT.md 第四节）。
 
-为什么只复现这两行：整张表里唯一值得盯着看的就是这对对照——
-两条假话除了多出一句「经 2026 年 3 月管理层会议决议」，一个字都不差，
-中招率却是 0/10 对 10/10。核心结论复验了，其余四行是支撑性数据。
+两条假话只差一句「经 2026 年 3 月管理层会议决议」，中招率 0/10 对 9/10。
+规模：2 变体 × 带/不带 system × 各 5 次 = 20 次提问 + 20 次判定。
 
-规模：2 个变体 × 带/不带 system × 各 5 次 = 20 次提问 + 20 次判定 = 40 次 API 调用。
-带/不带都跑是为了和 REPORT 表里的 /10 口径对齐；想省一半就把 main 里的
-system 循环删掉只跑带 system，但那样数字是 /5，和表里对不上。
-
-跑法（在 rag/ 目录下）：
-    python experiments/poison_core.py
-
-结果存 experiments/results_core.json —— 然后你自己逐条读 20 条回答、
-打标签（全文读，不要只读首行），和模型裁判的判定对比，把结论写回 REPORT。
+跑法（rag/ 目录）：python experiments/poison_core.py
+机器输出存 results_core_raw.json（可覆盖）；人工全文打标签补进
+results_core.json 的「人工判定」字段（脚本永不覆盖），再和模型裁判对照。
 """
 
 import json
@@ -142,10 +135,11 @@ def main():
                     }
                 )
                 print(f"{name} | system={use_system} | 第{i + 1}次: {v}")
-    out = BASE_DIR / "experiments" / "results_core.json"
+    out = BASE_DIR / "experiments" / "results_core_raw.json"
     out.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
     print(
-        f"\n已存 {out}（{len(results)} 条）。接下来：逐条读回答、自己打标签、和判定对比。"
+        f"\n已存 {out}（{len(results)} 条）。接下来：逐条读回答，把人工判定"
+        f"（同裁判词表：能/不能/不确定）补进 results_core.json 的「人工判定」字段，再和判定对比。"
     )
 
 
