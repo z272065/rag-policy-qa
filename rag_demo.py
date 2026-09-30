@@ -33,16 +33,17 @@ print(f"找到文件  : {len(doc_files)} 个\n")
 
 
 def score(question, text):
-    score = 0
+    total = 0
     for k in range(len(question) - 1):
         if question[k : k + 2] in text:
-            score += 1
-    return score
+            total += 1
+    return total
 
 
 def run_agent(user_prompt):
     # 3.逐个读取
     chunks = []
+    nonzero_chunks = []
     for i, path in enumerate(doc_files, start=1):
         # read_text 必须显式指定 encoding，Windows 默认编码读中文会报 UnicodeDecodeError
         text = path.read_text(encoding="utf-8")
@@ -59,6 +60,7 @@ def run_agent(user_prompt):
                 body = parts[0].strip() + "\n\n" + body
 
             chunks.append({"文件序号": i, "文件名": path.name, "文件内容": body})
+
     for cc in chunks:
         cc_score = score(user_prompt, cc["文件内容"])
         cc["分数"] = cc_score
@@ -66,14 +68,20 @@ def run_agent(user_prompt):
             f"分数:{cc_score},文件名:{cc['文件名']},内容开头:{cc['文件内容'][:30].replace('\n', ' ')}"
         )
 
-    chunks.sort(key=lambda cc: cc["分数"], reverse=True)
-    top3 = chunks[:3]
+    for check in chunks:
+        if check["分数"] != 0:
+            nonzero_chunks.append(check)
+    if len(nonzero_chunks) == 0:
+        return "材料里没有相关内容"
+
+    nonzero_chunks.sort(key=lambda cc: cc["分数"], reverse=True)
+    top3 = nonzero_chunks[:3]
     top_content = ""  # ← 空字符串打底
     for top in top3:
         top_content += (
             f"【{top['文件名']}】\n{top['文件内容']}\n\n"  # ← 每轮拼上去的是一段文字
         )
-    prompt = f"{top_content}\n{user_prompt}"
+    prompt = f"参考材料:{top_content}\n问题:{user_prompt}"
     messages = [
         {
             "role": "system",
@@ -86,9 +94,8 @@ def run_agent(user_prompt):
         messages=messages,
     )
     message = response.choices[0].message
-    messages.append(message)
     return message.content
 
 
 if __name__ == "__main__":
-    print(run_agent("我想休假，要提前几天申请？"))
+    print(run_agent("电脑怎么配发"))
