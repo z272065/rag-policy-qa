@@ -42,6 +42,22 @@ tools = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "calculate",
+            "description": "对纯数字的算术表达式做四则运算；需要根据已知数字算出具体结果（钱、天数、比例）时调用",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "expression": {
+                        "type": "string",
+                        "description": "纯算术表达式，如 12000*0.8",
+                    },
+                },
+            },
+        },
+    },
 ]
 
 
@@ -57,7 +73,19 @@ def web_search(query):
     return "\n\n".join(lines)
 
 
-TOOL_BAG = {"search_knowledge": search_knowledge, "web_search": web_search}
+def calculate(expression):
+    print(f"calculate被调用了,expression:{expression}")
+    for e in expression:
+        if e not in "0123456789+-*/().% ":
+            return "只支持纯算术表达式"
+    return str(eval(expression))
+
+
+TOOL_BAG = {
+    "search_knowledge": search_knowledge,
+    "web_search": web_search,
+    "calculate": calculate,
+}
 
 
 def run_agent(user_prompt, max_turns=5):
@@ -99,4 +127,5 @@ def run_agent(user_prompt, max_turns=5):
 
 
 if __name__ == "__main__":
-    print(run_agent("今年国庆怎么调休？"))
+    print(run_agent("1024的37%是多少"))
+    print(run_agent("我月薪 12000，请一个月病假，工资发多少"))
