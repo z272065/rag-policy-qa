@@ -1,6 +1,7 @@
 import os
 import json
 from openai import OpenAI
+from tavily import TavilyClient
 from dotenv import load_dotenv
 from retrieval import search_knowledge_base
 
@@ -11,6 +12,8 @@ client = OpenAI(
     base_url="https://api.deepseek.com",
     api_key=os.environ["DEEPSEEK_API_KEY"],
 )
+
+tavily_client = TavilyClient(api_key=os.environ["TAVILY_API_KEY"])
 
 tools = [
     {
@@ -25,7 +28,20 @@ tools = [
                 },
             },
         },
-    }
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "web_search",
+            "description": "需要时效性信息或公司制度库以外的公开信息时调用,公司内部规定不在公开网页上",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "要搜索的问题或关键词"}
+                },
+            },
+        },
+    },
 ]
 
 
@@ -34,7 +50,14 @@ def search_knowledge(query):
     return search_knowledge_base(query)
 
 
-TOOL_BAG = {"search_knowledge": search_knowledge}
+def web_search(query):
+    print(f"web_search被调用了,query:{query}")
+    resp = tavily_client.search(query, max_results=5)
+    lines = [f"【{r['title']}】({r['url']})\n{r['content']}" for r in resp["results"]]
+    return "\n\n".join(lines)
+
+
+TOOL_BAG = {"search_knowledge": search_knowledge, "web_search": web_search}
 
 
 def run_agent(user_prompt, max_turns=5):
@@ -76,4 +99,4 @@ def run_agent(user_prompt, max_turns=5):
 
 
 if __name__ == "__main__":
-    print(run_agent("公司有班车吗？"))
+    print(run_agent("今年国庆怎么调休？"))
