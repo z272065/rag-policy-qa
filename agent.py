@@ -20,7 +20,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "search_knowledge",
-            "description": "需要根据材料回答问题的时候调用",
+            "description": "检索公司内部制度库。仅当问题问的是公司自己制定的制度、流程、标准、额度（考勤、请假、报销、福利等）时调用；国家法律法规和公开政策不在库里，不要用本工具。",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -33,7 +33,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "web_search",
-            "description": "需要时效性信息或公司制度库以外的公开信息时调用,公司内部规定不在公开网页上",
+            "description": "搜索互联网上的公开信息。当问题涉及国家法律法规、公共政策（社保公积金、产假、年假、试用期工资等国家有统一规定的内容）或时效性信息（当年节假日安排等）时调用；公司制度库里查不到、但属于公开领域的问题，也用它。公司自己的内部制度上网搜不到，要用 search_knowledge。",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -46,7 +46,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "calculate",
-            "description": "对纯数字的算术表达式做四则运算；需要根据已知数字算出具体结果（钱、天数、比例）时调用",
+            "description": "精确计算算术表达式，返回数值结果。只要回答中需要给出计算得出的数字（金额、天数、比例、折扣等），一律调用本工具，不要自己心算；即使用户没有明确要求计算也要调用。",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -92,23 +92,30 @@ def run_agent(user_prompt, max_turns=5):
     messages = [
         {
             "role": "system",
-            "content": "你有公司制度库可以查；回答必须基于查到的材料；材料里没有就直说不知道，绝不编",
+            "content": "你有公司制度库可查，也可以搜索公开网页。回答公司制度问题必须基于查到的材料。制度库里没有的，先判断：国家法规、公开政策、时效信息→用 web_search 查了再答；公司自主事项（年终奖、班车这类网上也查不到的）→如实告知查无并建议咨询 HR。无论哪条路，都不编造。",
         },
         {"role": "user", "content": user_prompt},
     ]
+    tool_call_list = []
+    texts = []
+
     for _ in range(max_turns):
         response = client.chat.completions.create(
             model="deepseek-flash", messages=messages, tools=tools
         )
         message = response.choices[0].message
         messages.append(message)
-
+        if message.content:
+            texts.append(message.content)
         if not message.tool_calls:
-            return message.content
+            return "\n\n".join(texts), tool_call_list
+
         for tool_call in message.tool_calls:
             try:
                 func_name = tool_call.function.name
                 func_args = json.loads(tool_call.function.arguments or "{}")
+                tool_call_list.append({"name": func_name, "arguments": func_args})
+
                 if func_name not in TOOL_BAG:
                     result = f"{func_name}不存在,重试"
                 elif not isinstance(func_args, dict):
@@ -123,7 +130,7 @@ def run_agent(user_prompt, max_turns=5):
             messages.append(
                 {"role": "tool", "content": result, "tool_call_id": tool_call.id}
             )
-    return "超出最大轮次,未获取内容"
+    return "超出最大轮次,未获取内容", tool_call_list
 
 
 if __name__ == "__main__":
