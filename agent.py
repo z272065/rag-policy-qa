@@ -63,22 +63,32 @@ tools = [
 
 def search_knowledge(query):
     print(f"search_knowledge被调用了,query:{query}")
-    return search_knowledge_base(query)
+    evidence = search_knowledge_base(query)
+    top_content = ""
+    for evi in evidence:
+        top_content += f"【{evi['文件名']}】\n{evi['文件内容']}\n\n"
+    return (top_content, evidence)
 
 
 def web_search(query):
     print(f"web_search被调用了,query:{query}")
     resp = tavily_client.search(query, max_results=5)
     lines = [f"【{r['title']}】({r['url']})\n{r['content']}" for r in resp["results"]]
-    return "\n\n".join(lines)
+    evidence = []
+    for r in resp["results"]:
+        evidence.append({"标题": r["title"], "URL": r["url"], "内容": r["content"]})
+    return ("\n\n".join(lines), evidence)
 
 
 def calculate(expression):
     print(f"calculate被调用了,expression:{expression}")
+    evidence = []
     for e in expression:
         if e not in "0123456789+-*/().% ":
-            return "只支持纯算术表达式"
-    return str(eval(expression))
+            return ("只支持纯算术表达式", evidence)
+    result = eval(expression)
+    evidence.append({"表达式": expression, "结果": result})
+    return (str(result), evidence)
 
 
 TOOL_BAG = {
@@ -111,17 +121,17 @@ def run_agent(user_prompt, max_turns=5):
             return "\n\n".join(texts), tool_call_list
 
         for tool_call in message.tool_calls:
+            evidence = None
+            func_args = None
             try:
                 func_name = tool_call.function.name
                 func_args = json.loads(tool_call.function.arguments or "{}")
-                tool_call_list.append({"name": func_name, "arguments": func_args})
-
                 if func_name not in TOOL_BAG:
                     result = f"{func_name}不存在,重试"
                 elif not isinstance(func_args, dict):
                     result = "参数必须是JSON对象,重试"
                 else:
-                    result = TOOL_BAG[func_name](**func_args)
+                    result, evidence = TOOL_BAG[func_name](**func_args)
             except json.JSONDecodeError as e:
                 result = f"参数不是合法JSON:{e}。你刚才生成的是:{tool_call.function.arguments!r},请重新生成"
             except Exception as e:
@@ -129,6 +139,9 @@ def run_agent(user_prompt, max_turns=5):
 
             messages.append(
                 {"role": "tool", "content": result, "tool_call_id": tool_call.id}
+            )
+            tool_call_list.append(
+                {"name": func_name, "arguments": func_args, "evidence": evidence}
             )
     return "超出最大轮次,未获取内容", tool_call_list
 

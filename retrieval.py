@@ -89,7 +89,7 @@ def search_knowledge_base(user_prompt):
     query_vec = embed([user_prompt])[0]
 
     result = collection.query(query_embeddings=[query_vec], n_results=3)
-
+    evidence = []
     # result 每层都是列表套列表（query 支持一次多问），[0] 是第 0 个问题的结果
     for rank, (doc, meta, dist) in enumerate(
         zip(result["documents"][0], result["metadatas"][0], result["distances"][0]),
@@ -99,11 +99,8 @@ def search_knowledge_base(user_prompt):
         print(
             f"第{rank}名, 相似度:{1 - dist:.3f}, 文件名:{meta['文件名']}, 内容开头:{preview}"
         )
-
-    top_content = ""
-    for doc, meta in zip(result["documents"][0], result["metadatas"][0]):
-        top_content += f"【{meta['文件名']}】\n{doc}\n\n"
-    return top_content
+        evidence.append({"相似度": 1 - dist, "文件名": meta["文件名"], "文件内容": doc})
+    return evidence
 
 
 if __name__ == "__main__":
