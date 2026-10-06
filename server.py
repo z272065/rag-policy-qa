@@ -1,6 +1,6 @@
-from fastapi import FastAPI
 from agent import run_agent
 from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
 
 app = FastAPI()
 
@@ -13,7 +13,7 @@ class Message(BaseModel):
 def ask(question: Message):
     q = question.mes
     if not q.strip():
-        return {"错误": "问题不能为空"}
+        raise HTTPException(status_code=422, detail="问题不能为空")
     answer, records = run_agent(q)
     SOURCE_MAP = {
         "search_knowledge": "检索",
@@ -26,4 +26,10 @@ def ask(question: Message):
             continue
         for r in rec["evidence"]:
             r["来源"] = source
-    return {"回答": answer, "回答调用记录": records}
+    return {"回答": answer, "路由": records}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(app, host="127.0.0.1", port=8000)

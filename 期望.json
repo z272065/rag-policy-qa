@@ -1,6 +1,6 @@
 {
   "回答": "给用户的回答,一个字符串",
-  "回答调用记录": [
+  "路由": [
     {
       "name": "search_knowledge",
       "arguments": {"query": "…"},

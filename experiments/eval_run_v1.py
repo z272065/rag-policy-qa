@@ -1,20 +1,21 @@
-import sys
 import json
 from pathlib import Path
-
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-from agent import run_agent
+import requests
 
 
 EVAL_FILE = Path(__file__).resolve().parent / "eval20_v1.json"
-RESULTS_FILE = Path(__file__).resolve().parent / "eval20_results_raw_v1.json"
+RESULTS_FILE = Path(__file__).resolve().parent / "eval20_results_raw_v1_http.json"
 
 
 questions = json.loads(EVAL_FILE.read_text(encoding="utf-8"))["题目"]
 result = []
 for q in questions:
     try:
-        answer, calls = run_agent(q["问题"], max_turns=5)
+        r = requests.post(
+            "http://127.0.0.1:8000/ask", json={"mes": q["问题"]}, timeout=300
+        )
+        d = r.json()
+        answer, calls = d["回答"], d["路由"]
         result.append(
             {
                 "编号": q["编号"],

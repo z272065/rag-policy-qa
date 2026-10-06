@@ -48,6 +48,8 @@
 
 口径：单卷单次，人工逐题判定。判定表（[改前](experiments/eval20_results_v1_改前.json) / [改后](experiments/eval20_results_v1_改后.json)）逐题带路由序列与错误方向，raw 机器稿单独归档（改前/改后各一份）。
 
+复测（10-06，改打 HTTP 管道）：评测脚本（[experiments/eval_run_v1.py](experiments/eval_run_v1.py)，改前/改后对比也是它跑的）从旧版的"直接 import run_agent 当函数调"改为 requests.post 打 [server.py](server.py) 的 /ask，FastAPI 层从此纳入评测范围。与改后老管道对照：按考卷口径（按最终走向判）走向 20/20 一致；逐调用完全一致 9/20，差异全部来自模型随机性（同工具调用次数、绕路增减），不影响走向判定。对照限度：老文件 [eval20_results_raw_v1_改后.json](experiments/eval20_results_raw_v1_改后.json)（10-04）落盘时，工具调用记录里还没有 evidence 字段（只有工具名和参数），"记录带证据"的能力 10-05 才加进 agent。所以新旧可比的只有工具链——每题调了哪些工具、什么顺序、几次；检索命中哪一块、相似度多少、搜回什么内容，老文件没存，比不了。也因此这不是严格的 A/B：两轮之间变的不止管道（评测从"直接调函数"改成"走 HTTP"），agent 代码自己也改了。所以"走向 20/20 一致"证明的是"换了管道，走向没变形"，证明不了"两条管道行为完全等价"。结果与判定归档：[eval20_results_raw_v1_http.json](experiments/eval20_results_raw_v1_http.json)（raw）/ [eval20_results_v1_http.json](experiments/eval20_results_v1_http.json)（判定表，路由判定预核全对，回答判定人工逐题填）。判定收口：路由 20/20，回答 20 对 0 错 0 编造（12 号首句英文记语言瑕疵，内容全对；10 号留有一条 web_search 调用失败的记录——evidence 为 null——模型随后换关键词重查、第二次成功拿回 5 条结果。"失败留 None、如实溯源"是 10-05 加的机制，这是它头一回在真实评测的记录里被看到——以前只在代码审查时确认过逻辑，从没在真实运行里出现过）。
+
 ## 怎么跑
 
 环境 Python 3.14。
@@ -62,7 +64,8 @@ pip install -r requirements.txt
 python rag_demo.py                # v1 关键词版
 python rag_demo_vector.py         # v2 向量版（首次运行自动建向量库 chroma_db/）
 python experiments/eval_run.py    # 复现 20 题检索对比（约 20 次 embedding + 20 次对话）
-python experiments/eval_run_v1.py   # 跑 20 题路由考卷（agent 多轮，检索/搜索/计算，约几分钟）
+python server.py                  # 起 /ask 服务（跑下面评测前先起，等 Uvicorn running 出现）
+python experiments/eval_run_v1.py   # 跑 20 题路由考卷（改打 HTTP：请求经 /ask，连 FastAPI 层一起测，约几分钟）
 ```
 
 改了 `docs/` 里的文档要删掉 `chroma_db/` 再跑，向量库不会自动更新。
@@ -78,4 +81,4 @@ python experiments/eval_run_v1.py   # 跑 20 题路由考卷（agent 多轮，�
 
 ## 下一步
 
-把 server.py（FastAPI 雏形）和前端接完上线；检索侧再向混合检索（关键词 + 向量两路融合）、答案带引用来源、chunk size 消融推进——还用这同一套题。
+把前端接完上线；检索侧再向混合检索（关键词 + 向量两路融合）、答案带引用来源、chunk size 消融推进——还用这同一套题。
