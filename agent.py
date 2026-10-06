@@ -123,6 +123,7 @@ def run_agent(user_prompt, max_turns=5):
         for tool_call in message.tool_calls:
             evidence = None
             func_args = None
+            func_name = None
             try:
                 func_name = tool_call.function.name
                 func_args = json.loads(tool_call.function.arguments or "{}")
@@ -147,5 +148,5 @@ def run_agent(user_prompt, max_turns=5):
 
 
 if __name__ == "__main__":
-    print(run_agent("1024的37%是多少"))
+    # print(run_agent("1024的37%是多少"))
     print(run_agent("我月薪 12000，请一个月病假，工资发多少"))
