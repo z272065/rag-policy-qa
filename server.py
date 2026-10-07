@@ -1,8 +1,13 @@
 from agent import run_agent
 from pydantic import BaseModel
 from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 
 app = FastAPI()
+
+BASE_DIR = Path(__file__).resolve().parent
+STATIC_DIR = BASE_DIR / "static"
 
 
 class Message(BaseModel):
@@ -28,6 +33,8 @@ def ask(question: Message):
             r["来源"] = source
     return {"回答": answer, "路由": records}
 
+
+app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
