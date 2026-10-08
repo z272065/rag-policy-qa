@@ -58,7 +58,7 @@
 pip install -r requirements.txt
 ```
 
-把 `.env.example` 复制成 `.env`，填两个 key：DeepSeek（聊天）、SiliconFlow（embedding）。
+把 `.env.example` 复制成 `.env`，填三个 key：DeepSeek（聊天）、SiliconFlow（embedding）、Tavily（搜索工具）。
 
 ```bash
 python rag_demo.py                # v1 关键词版
