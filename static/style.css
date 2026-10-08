@@ -1,0 +1,111 @@
+/* ===== 基础重置 ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #f5f6f8;
+    color: #1f2329;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== 结果区：占满剩余高度，内容多了自己滚动 ===== */
+.result {
+    flex: 1;
+    overflow-y: auto;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 24px 16px;
+}
+
+#answer {
+    font-size: 16px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    margin-bottom: 16px;
+}
+
+/* ===== 证据卡片（app.js 动态生成 .card） ===== */
+#answer_card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.card {
+    background: #ffffff;
+    border: 1px solid #e3e6eb;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #4e5562;
+    overflow-wrap: anywhere;
+}
+
+.card a {
+    display: block;
+    margin-top: 4px;
+    color: #2f6bff;
+    text-decoration: none;
+}
+
+.card a:hover {
+    text-decoration: underline;
+}
+
+/* ===== 底部输入区 ===== */
+#form {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 12px 16px 16px;
+}
+
+#input {
+    flex: 1;
+    height: 40px;
+    padding: 0 12px;
+    font-size: 14px;
+    background: #ffffff;
+    border: 1px solid #d0d4da;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+#input:focus {
+    border-color: #2f6bff;
+}
+
+#submit_button {
+    height: 40px;
+    padding: 0 20px;
+    font-size: 14px;
+    color: #ffffff;
+    background: #2f6bff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+#submit_button:hover:not(:disabled) {
+    background: #2458d6;
+}
+
+#submit_button:disabled {
+    background: #9db8ee;
+    cursor: not-allowed;
+}
