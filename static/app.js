@@ -5,13 +5,25 @@ const input = document.querySelector("#input")
 const submit_button = document.querySelector("#submit_button")
 
 function render(c){
-    if (c.evidence===null || c.evidence.length===0) {
+    if (c.evidence===null) {
         const louse = document.createElement('div')
         louse.className = "card"
         louse.textContent = "调用失败,未获得证据"
         answer_card.append(louse)
         return answer_card
-    }else {
+    } else if(c.evidence.length===0) {
+        const tool_reason = document.createElement('div')
+        tool_reason.className = "card"
+        if (c["name"] ==="calculate") {
+            tool_reason.textContent = "计算参数出现问题"
+        } else if (c["name"] === "web_search"){
+            tool_reason.textContent = "没有搜到结果"
+        } else {
+            tool_reason.textContent = "未带回证据"
+        }
+        answer_card.append(tool_reason)
+        return answer_card
+    } else {
         for (let index = 0; index < c.evidence.length; index++) {
             const element = c.evidence[index];
             const card = document.createElement("div")
