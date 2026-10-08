@@ -3,6 +3,16 @@ const answer_card = document.querySelector("#answer_card")
 const form = document.querySelector("#form")
 const input = document.querySelector("#input")
 const submit_button = document.querySelector("#submit_button")
+const welcome = document.querySelector("#welcome")
+const examples = document.querySelectorAll(".example")
+
+// 点击示例问题 = 直接发送：填入输入框后触发表单提交
+for (const btn of examples) {
+    btn.addEventListener("click", function(){
+        input.value = btn.textContent
+        form.requestSubmit()
+    })
+}
 
 function render(c){
     if (c.evidence===null) {
@@ -49,6 +59,10 @@ function render(c){
 
 form.addEventListener('submit',async function(e){
     e.preventDefault()
+    // 首次提问后欢迎块消失
+    if (welcome.parentNode) {
+        welcome.remove()
+    }
     answer.textContent = "思考中..."
     answer_card.textContent = ""
     submit_button.disabled = true

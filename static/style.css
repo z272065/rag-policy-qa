@@ -5,7 +5,8 @@
     box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
     height: 100%;
 }
 
@@ -17,20 +18,33 @@ body {
     flex-direction: column;
 }
 
-/* ===== 结果区：占满剩余高度，内容多了自己滚动 ===== */
+/* ===== 结果区：占满剩余高度，内容多了自己滚动 =====
+   容器保持全宽，滚动条才贴窗口右侧；
+   列宽限制放在子元素上 */
 .result {
     flex: 1;
     overflow-y: auto;
     width: 100%;
-    max-width: 760px;
-    margin: 0 auto;
     padding: 24px 16px;
+}
+
+#welcome,
+#answer,
+#answer_card {
+    width: 100%;
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 #answer {
     font-size: 16px;
     line-height: 1.7;
     white-space: pre-wrap;
+}
+
+/* 空容器不占位：没有回答时下边距会把空页面顶出滚动条 */
+#answer:not(:empty) {
     margin-bottom: 16px;
 }
 
@@ -108,4 +122,54 @@ body {
 #submit_button:disabled {
     background: #9db8ee;
     cursor: not-allowed;
+}
+
+/* ===== 欢迎块：只在首次提问前显示，由 JS 移除 ===== */
+#welcome {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 28px;
+    text-align: center;
+}
+
+#welcome_text {
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.6;
+}
+
+/* 四个示例问题：2×2 网格 */
+#examples {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+    max-width: 460px;
+}
+
+.example {
+    padding: 12px 14px;
+    font-size: 14px;
+    text-align: left;
+    color: #4e5562;
+    background: #ffffff;
+    border: 1px solid #e3e6eb;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.example:hover {
+    border-color: #2f6bff;
+    color: #2f6bff;
+}
+
+/* 窄屏（手机）示例改成单列 */
+@media (max-width: 520px) {
+    #examples {
+        grid-template-columns: 1fr;
+    }
 }
