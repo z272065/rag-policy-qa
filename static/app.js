@@ -14,6 +14,14 @@ for (const btn of examples) {
     })
 }
 
+// 回答里的 markdown 符号变真样式：先转义 HTML 特殊字符（防回答内容被浏览器当标签），再把 **加粗** 和行首 ## 标题替换成加粗；表格的竖线不做，要完美渲染得引库
+function md_to_html(text){
+    const safe = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    return safe
+        .replace(/^#{1,6} ?(.+)$/gm, "<strong>$1</strong>")
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+}
+
 function render(c){
     if (c.evidence===null) {
         const louse = document.createElement('div')
@@ -39,7 +47,7 @@ function render(c){
             const card = document.createElement("div")
             if (element["来源"]==="检索"){
                 card.className = "card"
-                card.textContent = `${element["文件名"]},相似度 ${element["相似度"]}`
+                card.textContent = `${element["文件名"]},相似度 ${element["相似度"].toFixed(3)}`
             } else if(element["来源"]==="搜索") {
                 const a = document.createElement('a')
                 a.href = element["URL"]
@@ -76,7 +84,7 @@ form.addEventListener('submit',async function(e){
         })
         const data =await response.json()
         if (response.ok) {
-            answer.textContent = data["回答"]
+            answer.innerHTML = md_to_html(data["回答"])
             for (const rec of data["路由"]) render(rec)
             input.value = ''
         } else {
