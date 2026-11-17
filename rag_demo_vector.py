@@ -12,7 +12,10 @@ client = OpenAI(
 
 
 def run_agent(user_prompt):
-    top_content = search_knowledge_base(user_prompt)
+    evidence = search_knowledge_base(user_prompt)
+    top_content = ""
+    for evi in evidence:
+        top_content += f"【{evi['文件名']}】\n{evi['文件内容']}\n\n"
     # 4. 拼 prompt 调大模型 —— 从这里开始和关键词版逐行相同
     prompt = f"{top_content}\n{user_prompt}"
     messages = [
