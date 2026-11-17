@@ -81,15 +81,18 @@ pip install -r requirements.txt
 
 把 `.env.example` 复制成 `.env`，填三个 key：DeepSeek（聊天）、SiliconFlow（embedding）、Tavily（搜索工具）。
 
+在 .env 所在目录下运行（裸 load_dotenv 只认当前工作目录）。
+
 ```bash
-python rag_demo.py                # v1 关键词版
-python rag_demo_vector.py         # v2 向量版（首次运行自动建向量库 chroma_db/）
-python experiments/eval_run.py    # 复现 20 题检索对比（约 20 次 embedding + 20 次对话）
-python server.py                  # 起 /ask 服务（跑下面评测前先起，等 Uvicorn running 出现）
-python experiments/eval_run_v1.py   # 跑 20 题路由考卷（改打 HTTP：请求经 /ask，连 FastAPI 层一起测，约几分钟）
+python build_db.py                 # 建库：读 docs 切块、向量化，重建 chroma_db（改 docs 后重跑它）
+python rag_demo.py                 # v1 关键词版
+python rag_demo_vector.py          # v2 向量版：检索已有 chroma_db，不自动建库
+python experiments/eval_run.py     # 复现 20 题检索对比（约 20 次 embedding + 20 次对话）
+python server.py                   # 起 /ask 服务（跑下面评测前先起，等 Uvicorn running 出现）
+python experiments/eval_run_v1.py  # 跑 20 题路由考卷（改打 HTTP：请求经 /ask，连 FastAPI 层一起测，约几分钟）
 ```
 
-改了 `docs/` 里的文档要删掉 `chroma_db/` 再跑，向量库不会自动更新。
+改了 `docs/` 里的文档后重跑 `python build_db.py` 重建向量库；`retrieval.py` 只做检索，不会自动更新库。
 
 ## 安全实验
 
@@ -97,7 +100,9 @@ python experiments/eval_run_v1.py   # 跑 20 题路由考卷（改打 HTTP：请
 
 ## 目录说明
 
-- `docs/`：我编的 4 份公司制度（考勤/请假/报销/福利），不是真实公司文件，只作知识库素材
+- `docs/`：我编的 34 份公司制度（考勤/请假/报销/福利等，按二级标题切出 209 块），不是真实公司文件，只作知识库素材
+- `build_db.py`：离线建库脚本，读 docs 切块、向量化并重建 `chroma_db/`
+- `retrieval.py`：检索层，连接已有 `chroma_db/` 提供向量检索；`chroma_db/` 属可再生中间产物，不进仓库
 - `experiments/`：两代评测集（15 周检索对比 / 16 周路由考卷）、评测脚本、两轮路由判定证据、投毒复现脚本、实验报告
 - `assets/`：对照实验配图（Dify 编排截图）
 

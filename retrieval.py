@@ -14,33 +14,8 @@ embed_client = OpenAI(
 EMBED_MODEL = "BAAI/bge-m3"
 
 
-# 1.定位 docs 目录
+# 1.项目根目录（用于定位已有的 chroma_db 向量库）
 BASE_DIR = Path(__file__).resolve().parent
-DOCS_DIR = BASE_DIR / "docs"
-
-if not DOCS_DIR.is_dir():
-    raise SystemExit(f"找不到目录: {DOCS_DIR}（当前工作目录是 {Path.cwd()}）")
-
-doc_files = sorted(DOCS_DIR.glob("*.md"))
-
-print(f"docs 目录 : {DOCS_DIR}")
-print(f"找到文件  : {len(doc_files)} 个\n")
-
-
-def split_chunks():
-    """读 docs 并按二级标题分块"""
-    chunks = []
-    for i, path in enumerate(doc_files, start=1):
-        text = path.read_text(encoding="utf-8")
-        parts = text.split("\n## ")
-        for j, chunk in enumerate(parts):
-            if j == 0:
-                continue
-            body = "## " + chunk.strip()
-            if j == 1:
-                body = parts[0].strip() + "\n\n" + body
-            chunks.append({"文件序号": i, "文件名": path.name, "文件内容": body})
-    return chunks
 
 
 def embed(texts):
@@ -52,9 +27,7 @@ def embed(texts):
     return [item.embedding for item in resp.data]
 
 
-chunks = split_chunks()
-
-# 2.建向量库：第一次运行才 embedding，之后直接读盘（向量是内容的函数，内容不变就不用重算）
+# 2.连接已有向量库（不再从 docs 自动建库，库由外部单独维护）
 # anonymized_telemetry=False：关掉 chroma 的匿名统计
 chroma_client = chromadb.PersistentClient(
     path=str(BASE_DIR / "chroma_db"),
@@ -66,22 +39,7 @@ collection = chroma_client.get_or_create_collection(
     name="hr_docs",
     metadata={"hnsw:space": "cosine"},
 )
-
-if collection.count() == 0:
-    # 库是空的（第一次运行）：调 API 把全部 chunk 向量化，写入库
-    vectors = embed([c["文件内容"] for c in chunks])
-    collection.add(
-        ids=[
-            f"chunk_{i}" for i in range(len(chunks))
-        ],  # chroma 要求每条有唯一字符串 id
-        embeddings=vectors,  # 向量本体（1024 维 float）
-        documents=[c["文件内容"] for c in chunks],  # 原文也存，查到后直接拿回文本
-        metadatas=[{"文件名": c["文件名"]} for c in chunks],
-    )
-    print(f"首次运行，已向量化入库: {collection.count()} 个 chunk\n")
-else:
-    print(f"复用已有向量库: {collection.count()} 个 chunk（本次没调 embedding API）\n")
-    # 注意：改了 docs/ 里的文档向量库不会自动更新，删掉 rag/chroma_db/ 再运行即可重建。
+print(f"连接向量库: {collection.count()} 个 chunk\n")
 
 
 def search_knowledge_base(user_prompt):
