@@ -90,6 +90,7 @@ python rag_demo_vector.py          # v2 向量版：检索已有 chroma_db，不
 python experiments/eval_run.py     # 复现 20 题检索对比（约 20 次 embedding + 20 次对话）
 python server.py                   # 起 /ask 服务（跑下面评测前先起，等 Uvicorn running 出现）
 python experiments/eval_run_v1.py  # 跑 20 题路由考卷（改打 HTTP：请求经 /ask，连 FastAPI 层一起测，约几分钟）
+python -m pytest experiments/test_regression.py -v  # 20 题路由回归断言（需先起 server.py，约 2 分钟）
 ```
 
 改了 `docs/` 里的文档后重跑 `python build_db.py` 重建向量库；`retrieval.py` 只做检索，不会自动更新库。
@@ -103,7 +104,7 @@ python experiments/eval_run_v1.py  # 跑 20 题路由考卷（改打 HTTP：请�
 - `docs/`：我编的 34 份公司制度（考勤/请假/报销/福利等，按二级标题切出 209 块），不是真实公司文件，只作知识库素材
 - `build_db.py`：离线建库脚本，读 docs 切块、向量化并重建 `chroma_db/`
 - `retrieval.py`：检索层，连接已有 `chroma_db/` 提供向量检索；`chroma_db/` 属可再生中间产物，不进仓库
-- `experiments/`：两代评测集（15 周检索对比 / 16 周路由考卷）、评测脚本、两轮路由判定证据、投毒复现脚本、实验报告
+- `experiments/`：两代评测集（15 周检索对比 / 16 周路由考卷）、评测脚本、两轮路由判定证据、投毒复现脚本、实验报告、`test_regression.py`（20 题路由回归断言，pytest 执行）
 - `assets/`：对照实验配图（Dify 编排截图）
 
 ## 下一步
