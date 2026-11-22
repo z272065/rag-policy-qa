@@ -71,6 +71,26 @@
 
 结论：Dify 复刻得了管道的形；评测和溯源的神还是自己那套，evidence 进判定表、路由错有方向可改，这些平台不给。什么时候直接用 Dify：内部快速搭一个不要求可控评测的知识库问答；要评测、要条款级溯源、要复合工具链，手写。Dify 侧是平台配置不是仓库代码，复现要点就是上文的配置句。
 
+## 混合检索（关键词 + 向量 RRF，第 20 周）
+
+纯向量只看语义，关键词只看字面，两路各有失手场景。融合做法：每路先取候选，按 RRF（倒数排名融合）只看名次累加 `1/(60+名次)`，绕开两路分数尺度不同（整数命中分 vs 0–1 余弦）无法直接相加的问题。实现见 [retrieval.py](retrieval.py) 的 `hybrid_search_knowledge_base`；建库仍由 build_db.py 负责，检索层不自动建库。agent 的 `search_knowledge` 工具也已接入混合路。
+
+三路名次由 [experiments/eval_hybrid.py](experiments/eval_hybrid.py) 对同一套 20 题跑出（答案块在三路的名次，落 `eval_hybrid_ranks.json`）：
+
+| 类别 | 关键词路 | 向量路 | 混合路 |
+| --- | --- | --- | --- |
+| 直球 10 题 | 全部第 1 | 全部第 1 | 全部第 1 |
+| 换说法 5 题 | 3 题第 1；休假题全角第 3、半角第 8 | 全部第 1 | **全部第 1** |
+
+要点：休假两题关键词路被口语化和标点干扰、滑到第 3、第 8，混合路靠向量路把答案块拉回第 1——关键词失手时融合仍能稳住答案；库外 5 题无答案块，不参与名次。
+
+在当前 209 块 + 混合检索下，用 20 题路由考卷（[eval20_v1.json](experiments/eval20_v1.json)）做完整评测，由 [eval_run_hybrid.py](experiments/eval_run_hybrid.py) 落机器稿、人工逐题判定（[eval20_results_hybrid.json](experiments/eval20_results_hybrid.json)）：
+
+- 路由走向 **20/20 对**（库内 10/10 · 需搜索 5/5 · 库外 5/5，中途绕路不扣分）；
+- 回答质量 **20/20 对**，0 错 0 不全 0 编造。
+
+单次运行结果，模型有随机性。
+
 ## 怎么跑
 
 环境 Python 3.14。
@@ -88,9 +108,11 @@ python build_db.py                 # 建库：读 docs 切块、向量化，重�
 python rag_demo.py                 # v1 关键词版
 python rag_demo_vector.py          # v2 向量版：检索已有 chroma_db，不自动建库
 python experiments/eval_run.py     # 复现 20 题检索对比（约 20 次 embedding + 20 次对话）
+python experiments/eval_hybrid.py  # 三路名次：同题答案块在关键词/向量/混合三路排名（约 30 次 embedding）
 python server.py                   # 起 /ask 服务（跑下面评测前先起，等 Uvicorn running 出现）
 python experiments/eval_run_v1.py  # 跑 20 题路由考卷（改打 HTTP：请求经 /ask，连 FastAPI 层一起测，约几分钟）
 python -m pytest experiments/test_regression.py -v  # 20 题路由回归断言（需先起 server.py，约 2 分钟）
+python experiments/eval_run_hybrid.py  # 混合检索时代完整评测：20 题落机器稿并初始化人工判定表（需先起 server，约 3-5 分钟）
 ```
 
 改了 `docs/` 里的文档后重跑 `python build_db.py` 重建向量库；`retrieval.py` 只做检索，不会自动更新库。
@@ -103,10 +125,10 @@ python -m pytest experiments/test_regression.py -v  # 20 题路由回归断言�
 
 - `docs/`：我编的 34 份公司制度（考勤/请假/报销/福利等，按二级标题切出 209 块），不是真实公司文件，只作知识库素材
 - `build_db.py`：离线建库脚本，读 docs 切块、向量化并重建 `chroma_db/`
-- `retrieval.py`：检索层，连接已有 `chroma_db/` 提供向量检索；`chroma_db/` 属可再生中间产物，不进仓库
-- `experiments/`：两代评测集（15 周检索对比 / 16 周路由考卷）、评测脚本、两轮路由判定证据、投毒复现脚本、实验报告、`test_regression.py`（20 题路由回归断言，pytest 执行）
+- `retrieval.py`：检索层，连接已有 `chroma_db/` 提供向量检索与关键词+向量 RRF 混合检索；`chroma_db/` 属可再生中间产物，不进仓库
+- `experiments/`：两代评测集（15 周检索对比 / 16 周路由考卷）、评测脚本、两轮路由判定证据、投毒复现脚本、实验报告、`test_regression.py`（20 题路由回归断言，pytest 执行）、`eval_hybrid.py`（三路名次评测，落 `eval_hybrid_ranks.json`）、`eval_run_hybrid.py`（混合检索时代完整评测，机器稿 `eval20_results_raw_hybrid.json` + 人工判定表 `eval20_results_hybrid.json`）
 - `assets/`：对照实验配图（Dify 编排截图）
 
 ## 下一步
 
-检索侧再向混合检索（关键词 + 向量两路融合）、答案带引用来源、chunk size 消融推进——还用这同一套题；最后一步公网部署拿 URL。
+混合检索与三路名次已落地；接着做答案引用来源、chunk size 消融——还用同一套题。本项目是本地练习项目，不做公网部署（数据为自编素材、部署纯成本）；部署上线能力已由会员系统项目（235jianba.cn）证明。

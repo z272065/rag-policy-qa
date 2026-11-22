@@ -3,7 +3,7 @@ import json
 from openai import OpenAI
 from tavily import TavilyClient
 from dotenv import load_dotenv
-from retrieval import search_knowledge_base
+from retrieval import hybrid_search_knowledge_base
 
 
 load_dotenv()
@@ -63,7 +63,7 @@ tools = [
 
 def search_knowledge(query):
     print(f"search_knowledge被调用了,query:{query}")
-    evidence = search_knowledge_base(query)
+    evidence = hybrid_search_knowledge_base(query)
     top_content = ""
     for evi in evidence:
         top_content += f"【{evi['文件名']}】\n{evi['文件内容']}\n\n"

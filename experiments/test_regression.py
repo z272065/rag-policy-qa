@@ -84,8 +84,11 @@ def test_route(service_available, q):
         assert "calculate" in tool_names, (
             f"题{q['编号']}未调用计算器，实际工具链：{tool_names}"
         )
-        # 概率性断言：模型措辞可能变化，失败先重跑确认
-        assert "9600" in answer, f"题{q['编号']}回答未含预期数字 9600：{answer}"
+        # 先归一化所有空白：模型可能用"9 600"等千位空格写法，数字正确不应判失败
+        normalized_answer = "".join(answer.split())
+        assert "9600" in normalized_answer, (
+            f"题{q['编号']}回答未含预期数字 9600：{answer}"
+        )
 
     elif expected == "搜索":
         assert "web_search" in tool_names, (
