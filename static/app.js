@@ -47,7 +47,7 @@ function render(c){
             const card = document.createElement("div")
             if (element["来源"]==="检索"){
                 card.className = "card"
-                card.textContent = `${element["文件名"]},相似度 ${element["相似度"].toFixed(3)}`
+                card.textContent = `${element["文件名"]},RRF分 ${element["RRF分"].toFixed(5)}`
             } else if(element["来源"]==="搜索") {
                 const a = document.createElement('a')
                 a.href = element["URL"]
@@ -91,6 +91,7 @@ form.addEventListener('submit',async function(e){
             answer.textContent = data.detail
         }
     } catch (error) {
+        console.error(error)
         answer.textContent = "服务未连接"
     }
     finally {
