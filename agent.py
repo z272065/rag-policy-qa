@@ -61,12 +61,21 @@ tools = [
 ]
 
 
+# 引用编号计数器：给每个检索块分配全局唯一编号，写进材料与 evidence。
+# 本地单用户练习用模块级变量即可，run_agent 每次开始时重置。
+# 边界：非并发安全，若以后多请求并发，要改成请求级上下文对象。
+_citation_counter = 0
+
+
 def search_knowledge(query):
+    global _citation_counter
     print(f"search_knowledge被调用了,query:{query}")
     evidence = hybrid_search_knowledge_base(query)
     top_content = ""
     for evi in evidence:
-        top_content += f"【{evi['文件名']}】\n{evi['文件内容']}\n\n"
+        _citation_counter += 1
+        evi["引用编号"] = _citation_counter
+        top_content += f"[{_citation_counter}] {evi['文件名']}\n{evi['文件内容']}\n\n"
     return (top_content, evidence)
 
 
@@ -99,10 +108,12 @@ TOOL_BAG = {
 
 
 def run_agent(user_prompt, max_turns=5):
+    global _citation_counter
+    _citation_counter = 0
     messages = [
         {
             "role": "system",
-            "content": "你有公司制度库可查，也可以搜索公开网页。回答公司制度问题必须基于查到的材料。制度库里没有的，先判断：国家法规、公开政策、时效信息→用 web_search 查了再答；公司自主事项（年终奖、班车这类网上也查不到的）→如实告知查无并建议咨询 HR。无论哪条路，都不编造。",
+            "content": "你有公司制度库可查，也可以搜索公开网页。回答公司制度问题必须基于查到的材料。制度库里没有的，先判断：国家法规、公开政策、时效信息→用 web_search 查了再答；公司自主事项（年终奖、班车这类网上也查不到的）→如实告知查无并建议咨询 HR。无论哪条路，都不编造。引用制度库材料作答时，在引用该材料的句子末尾标注编号，如 [1]；只能使用材料里给出的编号，禁止编造编号；没有引用制度库的内容（拒答、计算、纯网页信息）不要加角标。",
         },
         {"role": "user", "content": user_prompt},
     ]
