@@ -77,6 +77,37 @@ body {
     text-decoration: underline;
 }
 
+/* ===== 引用角标与引用清单（app.js 动态生成） ===== */
+#answer sup.cite {
+    vertical-align: super;
+    font-size: 12px;
+    font-weight: 600;
+    color: #2f6bff;
+    margin-left: 2px;
+    cursor: default;
+}
+
+#citation_box {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.citation_item {
+    background: #ffffff;
+    border: 1px solid #e3e6eb;
+    border-left: 3px solid #2f6bff;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #4e5562;
+    overflow-wrap: anywhere;
+}
+
 /* ===== 底部输入区 ===== */
 #form {
     display: flex;

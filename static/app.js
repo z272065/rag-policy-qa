@@ -14,12 +14,13 @@ for (const btn of examples) {
     })
 }
 
-// 回答里的 markdown 符号变真样式：先转义 HTML 特殊字符（防回答内容被浏览器当标签），再把 **加粗** 和行首 ## 标题替换成加粗；表格的竖线不做，要完美渲染得引库
+// 回答里的 markdown 符号变真样式：先转义 HTML 特殊字符（防回答内容被浏览器当标签），再把 **加粗** 和行首 ## 标题替换成加粗；最后把 [数字] 角标替换成上标；表格的竖线不做，要完美渲染得引库
 function md_to_html(text){
     const safe = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
     return safe
         .replace(/^#{1,6} ?(.+)$/gm, "<strong>$1</strong>")
         .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/\[(\d+)\]/g, '<sup class="cite">[$1]</sup>')
 }
 
 function render(c){
@@ -65,6 +66,32 @@ function render(c){
     }
 }
 
+// 渲染引用清单：只列正文里实际出现角标的来源，不把检索到但没采用的块列出来
+function render_citations(answer_text, citations){
+    let box = document.querySelector("#citation_box")
+    if (!box) {
+        box = document.createElement("div")
+        box.id = "citation_box"
+        answer.after(box)
+    }
+    box.textContent = ""
+    // 从原始回答文本提取所有角标编号并去重（同一编号可能出现多次）
+    const used = [...answer_text.matchAll(/\[(\d+)\]/g)].map(m => m[1])
+    const used_unique = [...new Set(used)]
+    if (used_unique.length === 0 || !citations) {
+        box.remove()   // 拒答/计算类没有角标，不显示引用框
+        return
+    }
+    for (const num of used_unique) {
+        const src = citations[num]
+        if (!src) continue   // 编号在映射里查不到（理论上不该发生），跳过不报错
+        const row = document.createElement("div")
+        row.className = "citation_item"
+        row.textContent = `[${num}] ${src["文件名"]} · ${src["小节"]}`
+        box.append(row)
+    }
+}
+
 form.addEventListener('submit',async function(e){
     e.preventDefault()
     // 首次提问后欢迎块消失
@@ -85,6 +112,7 @@ form.addEventListener('submit',async function(e){
         const data =await response.json()
         if (response.ok) {
             answer.innerHTML = md_to_html(data["回答"])
+            render_citations(data["回答"], data["引用来源"])
             for (const rec of data["路由"]) render(rec)
             input.value = ''
         } else {
